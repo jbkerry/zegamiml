@@ -66,7 +66,7 @@ def flatten_image(img):
 if args.format=="Matrix":
     zt = pd.read_csv(args.input,sep='\t',skiprows=1,header=None)
     zt_df = zt.loc[:,6:]
-    zt_df.colums = range(100)
+    zt_df.columns = range(100)
     zt_df = zt_df.fillna(0)
     data = zt_df.values
 else:
@@ -102,10 +102,15 @@ y_label =  args.analysis_type + "_y"
 zt[x_label]=df['x']
 zt[y_label]=df['y']
 
+zt_df[x_label]=df['x']
+zt_df[y_label]=df['y']
+Sample1000 = zt_df.sample(1000, random_state=0)
+
 print("==========================")
 #print str(df)
 print("Appended x and y coordinates to "+args.input+" and created "+args.output+".")
-zt.to_csv(args.output,sep="\t",index=False)
+zt_df.to_csv(args.output,sep="\t",index=False)
+Sample1000.to_csv(args.output+"_Rand1000",sep="\t",index=False)
 print("==========================")
 
 
