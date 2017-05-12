@@ -65,10 +65,16 @@ def flatten_image(img):
 
 if args.format=="Matrix":
     zt = pd.read_csv(args.input,sep='\t',skiprows=1,header=None)
-    zt_df = zt.loc[:,6:]
-    zt_df.columns = range(100)
-    zt_df = zt_df.fillna(0)
-    data = zt_df.values
+    #zt_df = zt.loc[:,6:]
+    #zt_df.columns = range(100)
+    zt_df = zt.fillna(0)
+    zt_df.insert(0, 'feature_id',zt_df[0]+"_"+zt_df[1].map(str)+"_"+zt_df[2].map(str))
+    zegami_mat = pd.read_csv('PeakFeatures.tab',sep="\t")
+    merge_mat = pd.merge(zegami_mat, zt_df, on='feature_id')
+    merge_mat = merge_mat.drop_duplicates(subset='feature_id', keep='first')
+    sample_mat = merge_mat.sample(1000, random_state=0)
+    data = sample_mat.iloc[:,17:].values
+    
 else:
     zt = pd.read_csv(args.input,sep="\t", header= 0)
     # get a list of images via path
@@ -97,20 +103,19 @@ else:
 
 X = pca.fit_transform(data)
 df = pd.DataFrame({"x": X[:, 0], "y": X[:, 1]})
-x_label =  args.analysis_type + "_x"
-y_label =  args.analysis_type + "_y"
+x_label =  args.analysis_type + "_JK_x"
+y_label =  args.analysis_type + "_JK_y"
 zt[x_label]=df['x']
 zt[y_label]=df['y']
 
-zt_df[x_label]=df['x']
-zt_df[y_label]=df['y']
-Sample1000 = zt_df.sample(1000, random_state=0)
+new_zt = sample_mat.iloc[:,:11]
+new_zt[x_label]=df['x']
+new_zt[y_label]=df['y']
 
 print("==========================")
 #print str(df)
 print("Appended x and y coordinates to "+args.input+" and created "+args.output+".")
-zt_df.to_csv(args.output,sep="\t",index=False)
-Sample1000.to_csv(args.output+"_Rand1000",sep="\t",index=False)
+new_zt.to_csv(args.output,sep="\t",index=False)
 print("==========================")
 
 
