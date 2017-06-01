@@ -43,7 +43,7 @@ def img_to_matrix(filename, verbose=False):
         print("changing size from %s to %s" % (str(img.size), str(STANDARD_SIZE)))
     # use PIL to resize to above   
     img = img.resize(STANDARD_SIZE)
-    print(str(img.getdata()))
+    #print(str(img.getdata()))
     # Returns the contents of this image as a sequence object containing pixel values.
     img = list(img.getdata())
     img = map(list, img)
@@ -73,10 +73,13 @@ if args.format=="Matrix":
     merge_mat = pd.merge(zegami_mat, zt_df, on='feature_id')
     merge_mat = merge_mat.drop_duplicates(subset='feature_id', keep='first')
     sample_mat = merge_mat.sample(1000, random_state=0)
+    sample_mat.index = range(1000)
     data = sample_mat.iloc[:,17:].values
     
 else:
     zt = pd.read_csv(args.input,sep="\t", header= 0)
+    zt = zt.sample(5000, random_state=0)
+    zt.index = range(5000)
     # get a list of images via path
     images = zt[args.image_column]
     data = []
@@ -84,6 +87,7 @@ else:
     print("Processing a "+str(images))
     for image in images:
         image = args.image_dir+"/"+image
+        print(image)
         img = img_to_matrix(image)
         img = flatten_image(img)
         data.append(img)
@@ -101,21 +105,37 @@ else:
 #or can do PCA
 	pca = PCA(svd_solver='randomized',n_components=2)
 
+pca = PCA(svd_solver='randomized',n_components=2)
 X = pca.fit_transform(data)
-df = pd.DataFrame({"x": X[:, 0], "y": X[:, 1]})
+pca_df = pd.DataFrame({"x": X[:, 0], "y": X[:, 1]})
+
+pca = TSNE()
+X = pca.fit_transform(data)
+tsne_df = pd.DataFrame({"x": X[:, 0], "y": X[:, 1]})
+
 x_label =  args.analysis_type + "_JK_x"
 y_label =  args.analysis_type + "_JK_y"
-zt[x_label]=df['x']
-zt[y_label]=df['y']
+#zt[x_label]=df['x']
+#zt[y_label]=df['y']
 
-new_zt = sample_mat.iloc[:,:11]
-new_zt[x_label]=df['x']
-new_zt[y_label]=df['y']
+#new_zt = sample_mat.iloc[:,:11]
+#new_zt[x_label]=df['x']
+#new_zt[y_label]=df['y']
+
+#new_zt['PCA_JK_x']=pca_df['x']
+#new_zt['PCA_JK_y']=pca_df['y']
+#new_zt['TSNE_JK_x']=tsne_df['x']
+#new_zt['TSNE_JK_y']=tsne_df['y']
+
+zt['PCA_x']=pca_df['x']
+zt['PCA_y']=pca_df['y']
+zt['TSNE_x']=tsne_df['x']
+zt['TSNE_y']=tsne_df['y']
 
 print("==========================")
-#print str(df)
 print("Appended x and y coordinates to "+args.input+" and created "+args.output+".")
-new_zt.to_csv(args.output,sep="\t",index=False)
+#new_zt.to_csv(args.output,sep="\t",index=False)
+zt.to_csv(args.output,sep="\t",index=False)
 print("==========================")
 
 
