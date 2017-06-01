@@ -3,7 +3,7 @@
 import pandas as pd
 
 def reset():
-    '''Starts as new data-frame or can be used to reset
+    '''Starts a new data-frame or can be used to reset
     a filled data-frame
     
     Returns
