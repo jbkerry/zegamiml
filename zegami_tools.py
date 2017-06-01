@@ -34,7 +34,8 @@ def append_group(df, table, name, peak_type, position):
     
     Returns
     -------
-    update_df: updated df consisting of original plus the new data-frame
+    update_df: updated data-frame consisting of original plus the new
+        data-frame
     
     '''
     
