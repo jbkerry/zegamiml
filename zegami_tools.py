@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import os
 import pandas as pd
 
 def reset():
@@ -39,11 +40,11 @@ def append_group(df, table, name, peak_type, position):
     
     '''
     
-    _temp_df = pd.read_csv(table, sep='\t', header=0)
-    _temp_df['plot_name'] = name
-    _temp_df['peak_type'] = peak_type
-    _temp_df['position'] = position
-    update_df = df.append(_temp_df, ignore_index=True)
+    temp_df = pd.read_csv(table, sep='\t', header=0)
+    temp_df['plot_name'] = name
+    temp_df['peak_type'] = peak_type
+    temp_df['position'] = position
+    update_df = df.append(temp_df, ignore_index=True)
     
     return update_df
 
@@ -68,19 +69,28 @@ def merge_plot_data(df, plot_file, dd=True):
         for use in TSNE
     '''
     
-    _data_df = pd.read_csv(plot_file,sep='\t',skiprows=1,header=None)
-    _data_df = _data_df.fillna(0)
-    _data_df.insert(0, 'feature_id', _data_df[0]+"_"+_data_df[1].map(str)+"_"+_data_df[2].map(str))
-    _data_df = _data_df.drop_duplicates(subset='feature_id', keep='first')
+    data_df = pd.read_csv(plot_file,sep='\t',skiprows=1,header=None)
+    data_df = data_df.fillna(0)
+    data_df.insert(0, 'feature_id', data_df[0]+"_"+data_df[1].map(str)+"_"+data_df[2].map(str))
+    data_df = data_df.drop_duplicates(subset='feature_id', keep='first')
     
     #_zegami_mat = pd.read_csv('PeakFeatures.tab',sep="\t")
-    _zegami_df = df
+    zegami_df = df
     
-    _merge_df = pd.merge(_zegami_df, _data_df, on='feature_id')
+    merge_df = pd.merge(zegami_df, data_df, on='feature_id')
     if dd:
-        _merge_df = _merge_df.drop_duplicates(subset='feature_id',
+        merge_df = merge_df.drop_duplicates(subset='feature_id',
                                               keep='first')
     
-    data = _merge_df.iloc[:,23:].values
+    data = merge_df.iloc[:,23:].values
     
     return data
+
+def symlink_image(file='../../Img_Detect/tagged_table_for_image_detection.txt'):
+    with open(file,'r') as w:
+        for i in w.readlines()[1:]:
+            cols = i.rstrip('\n').split('\t')
+            dst = os.path.join('../../Img_Detect/training_dataset',cols[-1][:-1].lower(),cols[1])
+            src = os.path.join('/t1-data/user/staylor/zegami/ter119_CTCF_2/out',cols[1])
+            os.symlink(src, dst)
+    return "symlinks created"
