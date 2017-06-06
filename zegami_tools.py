@@ -87,10 +87,27 @@ def merge_plot_data(df, plot_file, dd=True):
     return data
 
 def symlink_image(file='../../Img_Detect/tagged_table_for_image_detection.txt'):
+    '''Takes an output metadata file from Zegami with images grouped by tags.
+    Generates symbolic links in the tensorflow image detection tranining dataset
+    that point to the raw images in ~ter119_CTCF_2/out/. Based on the value in
+    the 'Tag' column this will put the link in the appropriate traning dataset
+    sub-directory
+    
+    Parameters
+    ----------
+    file: tab-separated Zegami output with 'Tags' as the final column
+    
+    Output
+    ------
+    symbolic links in the appropriate tranining dataset sub-directory
+    '''
+    
     with open(file,'r') as w:
         for i in w.readlines()[1:]:
             cols = i.rstrip('\n').split('\t')
-            dst = os.path.join('../../Img_Detect/training_dataset',cols[-1][:-1].lower(),cols[1])
-            src = os.path.join('/t1-data/user/staylor/zegami/ter119_CTCF_2/out',cols[1])
+            dst = os.path.join('../../Img_Detect/training_dataset',
+                               cols[-1][:-1].lower(),cols[1])
+            src = os.path.join('/t1-data/user/staylor/zegami/ter119_CTCF_2/out',
+                               cols[1])
             os.symlink(src, dst)
     return "symlinks created"
