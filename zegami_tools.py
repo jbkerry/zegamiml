@@ -105,9 +105,10 @@ def symlink_image(file='../../Img_Detect/tagged_table_for_image_detection.txt'):
     with open(file,'r') as w:
         for i in w.readlines()[1:]:
             cols = i.rstrip('\n').split('\t')
+            ext = cols[1][:-4]+".jpg"
             dst = os.path.join('../../Img_Detect/training_dataset',
-                               cols[-1][:-1].lower(),cols[1])
+                               cols[-1],ext)
             src = os.path.join('/t1-data/user/staylor/zegami/ter119_CTCF_2/out',
-                               cols[1])
+                               ext)
             os.symlink(src, dst)
     return "symlinks created"
