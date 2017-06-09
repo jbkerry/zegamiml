@@ -112,3 +112,35 @@ def symlink_image(file='../../Img_Detect/tagged_table_for_image_detection.txt'):
                                ext)
             os.symlink(src, dst)
     return "symlinks created"
+
+def filter_trained(file='/t1-data1/WTSA_Dev/jkerry/MachineLearning/Zegami/zegamiml/PeakFeatures.tab'):
+    df = pd.read_csv(file, sep='\t', header=0)
+    df = df.drop_duplicates(subset='feature_id', keep='first')
+    train_list = os.listdir('/t1-data1/WTSA_Dev/jkerry/MachineLearning/Zegami/' \
+                            'Img_Detect/training_dataset/null/')+os.listdir(
+                            '/t1-data1/WTSA_Dev/jkerry/MachineLearning/Zegami/' \
+                            'Img_Detect/training_dataset/peak/')
+    id_list = [x[:-4] for x in train_list]
+    filter_df = df[[x not in id_list for x in df['feature_id']]]
+    return filter_df
+
+def classify(df):
+    for i in df['feature_id'][:5]:
+        image_name = i+".jpg"
+        script = '/t1-data1/WTSA_Dev/jkerry/MachineLearning/Zegami/Img_Detect/classify.py'
+        image_path = '/t1-data/user/staylor/zegami/ter119_CTCF_2/out/'+image_name
+        #group = %run $script {image_path}
+    #return group
+    
+    ### since no browser is installed on harrier I ran the following from an ipython shell instead of this function:
+   # for i in filter_df['feature_id']:
+   #...:     image_name = i+'.jpg'
+   #...:     script = '/t1-data1/WTSA_Dev/jkerry/MachineLearning/Zegami/Img_Detect/classify.py'
+   #...:     image_path = '/t1-data/user/staylor/zegami/ter119_CTCF_2/out/'+image_name
+   #...:     with io.capture_output() as captured:
+   #...:         %run $script {image_path}
+   #...:     for line in captured.stdout.split('\n'):
+   #...:         if line:
+   #...:             label, score = line.split(' (score = ')
+   #...:             score = score.rstrip(')')
+   #...:             score_dict[label].append(score)
