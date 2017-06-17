@@ -67,7 +67,7 @@ def get_plot_data(zegami_file, plot_file, col_num):
         plot data from plot_file and the corresponding peak feature_id
     '''
     
-    data_df = pd.read_csv(plot_file,sep='\t',skiprows=1,header=None)
+    data_df = pd.read_csv(plot_file, sep='\t',skiprows=1, header=None)
     data_df = data_df.fillna(0)
     data_df.insert(0, 'feature_id', data_df[0]+"_"+data_df[1].map(str)+"_"+data_df[2].map(str))
     data_df = data_df.drop_duplicates(subset='feature_id', keep='first')
@@ -77,9 +77,12 @@ def get_plot_data(zegami_file, plot_file, col_num):
     zegami_df.index = range(zegami_df.shape[0])
     
     merge_df = pd.merge(zegami_df, data_df, on='feature_id')                                  
-    plot_start = col_num+6
-    merge_df = merge_df.iloc[:, [0] + [i for i in range(plot_start,
-                                                        plot_start+100)]]
+    #plot_start = col_num+6
+    feature_id = merge_df['feature_id']
+    merge_df = merge_df.iloc[:, -100:]
+    merge_df.insert(0, 'feature_id', feature_id)
+    #merge_df = merge_df.iloc[:, [0] + [i for i in range(plot_start,
+                                                        #plot_start+100)]]
     
     if not zegami_df['feature_id'].equals(merge_df['feature_id']):
         print('Caution: original zegami data-frame and merged data-frame are' \
@@ -125,23 +128,11 @@ def filter_trained(file='/t1-data1/WTSA_Dev/jkerry/MachineLearning/Zegami/zegami
     filter_df = df[[x not in id_list for x in df['feature_id']]]
     return filter_df
 
-def classify(df):
-    for i in df['feature_id'][:5]:
-        image_name = i+".jpg"
-        script = '/t1-data1/WTSA_Dev/jkerry/MachineLearning/Zegami/Img_Detect/classify.py'
-        image_path = '/t1-data/user/staylor/zegami/ter119_CTCF_2/out/'+image_name
-        #group = %run $script {image_path}
-    #return group
-    
-    ### since no browser is installed on harrier I ran the following from an ipython shell instead of this function:
-   # for i in filter_df['feature_id']:
-   #...:     image_name = i+'.jpg'
-   #...:     script = '/t1-data1/WTSA_Dev/jkerry/MachineLearning/Zegami/Img_Detect/classify.py'
-   #...:     image_path = '/t1-data/user/staylor/zegami/ter119_CTCF_2/out/'+image_name
-   #...:     with io.capture_output() as captured:
-   #...:         %run $script {image_path}
-   #...:     for line in captured.stdout.split('\n'):
-   #...:         if line:
-   #...:             label, score = line.split(' (score = ')
-   #...:             score = score.rstrip(')')
-   #...:             score_dict[label].append(score)
+#def classify(df):
+#    for i in df['feature_id'][:5]:
+#        image_name = i+".jpg"
+#        script = '/t1-data1/WTSA_Dev/jkerry/MachineLearning/Zegami/Img_Detect/classify.py'
+#        image_path = '/t1-data/user/staylor/zegami/ter119_CTCF_2/out/'+image_name
+#        group = %run $script {image_path}
+#    return group
+
