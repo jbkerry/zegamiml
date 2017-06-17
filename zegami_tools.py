@@ -48,25 +48,23 @@ def append_group(df, table, name, peak_type, position):
     
     return update_df
 
-def merge_plot_data(df, plot_file, dd=True):
+def get_plot_data(zegami_file, plot_file, col_num):
     '''Merges peaks in a zegami output dataframe with
     plot data from a text file with bigWig values in
     100 bins across the peak
     
     Parameters
     ----------
-    df: the zegami info data-frames with the required
-        peak IDs
+    zegami_file: the zegami info TSV file with the required peak IDs
     plot_file: a tab-delimited file with values for
-        all peaks, split into 100 bins
-    dd: boolean, drop duplicates in the merged data-frame,
-        default = True
+        all peaks, split into 100 bins (output from deepTools computeMatrix)
+    col_num: int, the number of columns in the zegami data-frame
         
     Returns
     -------
-    data: a 2-dimensional numpy array containing the
-        values for each peak from the zegami data-frame
-        for use in TSNE
+    zegami_df: a pandas data-frame of the original zegami input file
+    merge_df: a pandas data-frame (n x 101) containing the 100 bins with bigwig
+        plot data from plot_file and the corresponding peak feature_id
     '''
     
     data_df = pd.read_csv(plot_file,sep='\t',skiprows=1,header=None)
@@ -74,17 +72,20 @@ def merge_plot_data(df, plot_file, dd=True):
     data_df.insert(0, 'feature_id', data_df[0]+"_"+data_df[1].map(str)+"_"+data_df[2].map(str))
     data_df = data_df.drop_duplicates(subset='feature_id', keep='first')
     
-    #_zegami_mat = pd.read_csv('PeakFeatures.tab',sep="\t")
-    zegami_df = df
+    zegami_df = pd.read_csv(zegami_file, sep="\t", header=0)
+    zegami_df = zegami_df.drop_duplicates(subset='feature_id', keep='first')
+    zegami_df.index = range(zegami_df.shape[0])
     
-    merge_df = pd.merge(zegami_df, data_df, on='feature_id')
-    if dd:
-        merge_df = merge_df.drop_duplicates(subset='feature_id',
-                                              keep='first')
+    merge_df = pd.merge(zegami_df, data_df, on='feature_id')                                  
+    plot_start = col_num+6
+    merge_df = merge_df.iloc[:, [0] + [i for i in range(plot_start,
+                                                        plot_start+100)]]
     
-    data = merge_df.iloc[:,23:].values
+    if not zegami_df['feature_id'].equals(merge_df['feature_id']):
+        print('Caution: original zegami data-frame and merged data-frame are' \
+              ' not in the same order')
     
-    return data
+    return zegami_df, merge_df
 
 def symlink_image(file='../../Img_Detect/tagged_table_for_image_detection.txt'):
     '''Takes an output metadata file from Zegami with images grouped by tags.
