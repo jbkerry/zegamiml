@@ -48,7 +48,7 @@ def append_group(df, table, name, peak_type, position):
     
     return update_df
 
-def get_plot_data(zegami_file, plot_file, col_num):
+def get_plot_data(zegami_file, plot_file):
     '''Merges peaks in a zegami output dataframe with
     plot data from a text file with bigWig values in
     100 bins across the peak
@@ -58,7 +58,6 @@ def get_plot_data(zegami_file, plot_file, col_num):
     zegami_file: the zegami info TSV file with the required peak IDs
     plot_file: a tab-delimited file with values for
         all peaks, split into 100 bins (output from deepTools computeMatrix)
-    col_num: int, the number of columns in the zegami data-frame
         
     Returns
     -------
@@ -77,12 +76,9 @@ def get_plot_data(zegami_file, plot_file, col_num):
     zegami_df.index = range(zegami_df.shape[0])
     
     merge_df = pd.merge(zegami_df, data_df, on='feature_id')                                  
-    #plot_start = col_num+6
     feature_id = merge_df['feature_id']
     merge_df = merge_df.iloc[:, -100:]
     merge_df.insert(0, 'feature_id', feature_id)
-    #merge_df = merge_df.iloc[:, [0] + [i for i in range(plot_start,
-                                                        #plot_start+100)]]
     
     if not zegami_df['feature_id'].equals(merge_df['feature_id']):
         print('Caution: original zegami data-frame and merged data-frame are' \
