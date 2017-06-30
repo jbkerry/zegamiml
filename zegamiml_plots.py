@@ -25,12 +25,13 @@ parser.add_argument(
     help='(int) Pick a number of random samples to draw from the dataset if ' \
 	 'you don\'t want to use all samples. Omit this option to use the ' \
 	 'entire dataset',
+    type=int,
     required=False)
 parser.add_argument(
     '-o',
     '--output',
     help='Output file name (will be original TSV with the X and Y columns ' \
-	 'appended',
+	 'appended)',
     required=True
 )
 parser.add_argument(
@@ -61,6 +62,7 @@ zd, merge_df = zt.get_plot_data(zegami_file = args.input,
 
 if args.sample:
     zd = zd.sample(args.sample, random_state=0)
+    zd.index = range(zd.shape[0])
     merge_df = merge_df.sample(args.sample, random_state=0)
 data = merge_df.iloc[:,1:].values
 
@@ -80,10 +82,11 @@ zd[x_label]=df['x']
 zd[y_label]=df['y']
 
 
-print("==========================")
-print("Appended x and y coordinates to "+args.input+" and created "+args.output+".")
+print('==========================')
+print('Appended x and y coordinates to {} and created {}.'.format(args.input,
+								  args.output))
 zd.to_csv(args.output,sep="\t",index=False)
-print("==========================")
+print('==========================')
 
 if args.plot:
 	pl.scatter(df['x'], df['y'], s=4)

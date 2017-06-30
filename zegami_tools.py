@@ -2,6 +2,7 @@
 
 import os
 import pandas as pd
+import numpy as np
 
 def reset():
     '''Starts a new data-frame or can be used to reset
@@ -49,21 +50,28 @@ def append_group(df, table, name, peak_type, position):
     return update_df
 
 def get_plot_data(zegami_file, plot_file):
-    '''Merges peaks in a zegami output dataframe with
-    plot data from a text file with bigWig values in
-    100 bins across the peak
+    '''Merges peaks in a zegami output dataframe with plot data from a
+    text file with bigWig values in 100 bins across the peak
     
     Parameters
     ----------
-    zegami_file: the zegami info TSV file with the required peak IDs
-    plot_file: a tab-delimited file with values for
-        all peaks, split into 100 bins (output from deepTools computeMatrix)
+    zegami_file : str
+        Path to Zegami info TSV file with the required peak IDs
+    plot_file : str
+        Path to a tab-delimited file with values for all peaks, split
+        into 100 bins (output from deepTools computeMatrix)
         
     Returns
     -------
-    zegami_df: a pandas data-frame of the original zegami input file
-    merge_df: a pandas data-frame (n x 101) containing the 100 bins with bigwig
-        plot data from plot_file and the corresponding peak feature_id
+    zegami_df : pandas data-frame
+        Contains data from the original Zegami input file
+    merge_df : pandas data-frame (n x 101)
+        Contains the 100 bins with bigWig plot data from `plot_file` and
+        the corresponding peak `feature_id`
+    labels : array-like
+        If a Tags column exists in the Zegami table, a list of numerical
+        labels will be returned for downstream machine learning
+        
     '''
     
     data_df = pd.read_csv(plot_file, sep='\t',skiprows=1, header=None)
@@ -75,6 +83,12 @@ def get_plot_data(zegami_file, plot_file):
     zegami_df = zegami_df.drop_duplicates(subset='feature_id', keep='first')
     zegami_df.index = range(zegami_df.shape[0])
     
+    
+    try:
+        labels = np.where(zegami_df['Tags']=='peak', 1, 0)
+    except KeyError:
+        labels = ''
+    
     merge_df = pd.merge(zegami_df, data_df, on='feature_id')                                  
     feature_id = merge_df['feature_id']
     merge_df = merge_df.iloc[:, -100:]
@@ -84,7 +98,46 @@ def get_plot_data(zegami_file, plot_file):
         print('Caution: original zegami data-frame and merged data-frame are' \
               ' not in the same order')
     
-    return zegami_df, merge_df
+    return zegami_df, merge_df, labels
+
+def get_labels(df, plot_file, dd=True):
+    '''Merges peaks in a zegami output dataframe with
+    plot data from a text file with bigWig values in
+    100 bins across the peak
+    
+    Parameters
+    ----------
+    df: the zegami info data-frames with the required
+        peak IDs
+    plot_file: a tab-delimited file with values for
+        all peaks, split into 100 bins
+    dd: boolean, drop duplicates in the merged data-frame,
+        default = True
+        
+    Returns
+    -------
+    data: a 2-dimensional numpy array containing the
+        values for each peak from the zegami data-frame
+        for use in TSNE
+    '''
+    
+    _data_df = pd.read_csv(plot_file,sep='\t',skiprows=1,header=None)
+    _data_df = _data_df.fillna(0)
+    _data_df.insert(0, 'feature_id', _data_df[0]+"_"+_data_df[1].map(str)+"_"+_data_df[2].map(str))
+    _data_df = _data_df.drop_duplicates(subset='feature_id', keep='first')
+    
+    #_zegami_df = pd.read_csv(df,sep="\t")
+    _zegami_df = df
+    
+    _merge_df = pd.merge(_zegami_df, _data_df, on='feature_id')
+    if dd:
+        _merge_df = _merge_df.drop_duplicates(subset='feature_id',
+                                              keep='first')
+    labels = ""
+    #labels = np.where(_merge_df.iloc[:,19]=='peak',1,0)
+    data = _merge_df.iloc[:,17:].values
+    
+    return labels, data
 
 def symlink_image(file='../../Img_Detect/tagged_table_for_image_detection.txt'):
     '''Takes an output metadata file from Zegami with images grouped by tags.
@@ -113,15 +166,18 @@ def symlink_image(file='../../Img_Detect/tagged_table_for_image_detection.txt'):
             os.symlink(src, dst)
     return "symlinks created"
 
-def filter_trained(file='/t1-data1/WTSA_Dev/jkerry/MachineLearning/Zegami/zegamiml/PeakFeatures.tab'):
-    df = pd.read_csv(file, sep='\t', header=0)
+def filter_trained(tag_file='/t1-data1/WTSA_Dev/jkerry/MachineLearning/Zegami/zegamiml/DHS_plots_tables/tagged_DHS.txt',
+                   full_file='/t1-data1/WTSA_Dev/jkerry/MachineLearning/Zegami/zegamiml/DHS_plots_tables/DHS_PeakFeatures.tab'):
+    df = pd.read_csv(full_file, sep='\t', header=0)
     df = df.drop_duplicates(subset='feature_id', keep='first')
-    train_list = os.listdir('/t1-data1/WTSA_Dev/jkerry/MachineLearning/Zegami/' \
-                            'Img_Detect/training_dataset/null/')+os.listdir(
-                            '/t1-data1/WTSA_Dev/jkerry/MachineLearning/Zegami/' \
-                            'Img_Detect/training_dataset/peak/')
-    id_list = [x[:-4] for x in train_list]
-    filter_df = df[[x not in id_list for x in df['feature_id']]]
+    
+    tag_df = pd.read_csv(tag_file, sep='\t', header=0)
+    #train_list = os.listdir('/t1-data1/WTSA_Dev/jkerry/MachineLearning/Zegami/' \
+    #                        'Img_Detect/training_dataset/null/')+os.listdir(
+    #                        '/t1-data1/WTSA_Dev/jkerry/MachineLearning/Zegami/' \
+    #                        'Img_Detect/training_dataset/peak/')
+    #id_list = [x[:-4] for x in train_list]
+    filter_df = df[[x not in tag_df['feature_id'].values for x in df['feature_id'].values]]
     return filter_df
 
 #def classify(df):
