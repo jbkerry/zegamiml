@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
 import os
+import pickle
+
 import pandas as pd
 import numpy as np
 
@@ -51,7 +53,7 @@ def append_group(df, table, name, peak_type, position):
 
 def get_plot_data(zegami_file, plot_file, bins=100):
     '''Merges peaks in a zegami output dataframe with plot data from a
-    text file with bigWig values in 100 bins across the peak
+    text file with bigWig values in bins across the peak
     
     Parameters
     ----------
@@ -70,9 +72,9 @@ def get_plot_data(zegami_file, plot_file, bins=100):
     merge_df : pandas dataframe 
         Contains the bins with bigWig plot data from `plot_file` and
         the corresponding peak `feature_id`
-    labels : list
-        If a Tags column exists in the Zegami table, a list of numerical
-        labels will be returned for downstream machine learning
+    labels : pandas Series
+        If a Tags column exists in the Zegami table, the values will be
+        stored in this Series for downstream machine learning
         
     '''
     
@@ -102,6 +104,26 @@ def get_plot_data(zegami_file, plot_file, bins=100):
               ' not in the same order')
     
     return zegami_df, merge_df, labels
+
+def export_ML_data(data, labels, samples):
+    """Splits data and labels by at position number given by `samples`.
+    Outputs as a pickled dictionary called `train_test_data.p`
+    
+    """
+    
+    train_data = data[:samples]
+    train_cl = labels[:samples]
+    test_data = data[samples:]
+    test_cl = labels[samples:]
+    
+    to_export = {}
+    to_export['train_data'] = train_data
+    to_export['train_cl'] = train_cl
+    to_export['test_data'] = test_data
+    to_export['test_cl'] = test_cl
+    
+    pickle.dump(to_export, open('train_test_data.p', 'wb'))
+
 
 def get_labels(df, plot_file, dd=True):
     '''Merges peaks in a zegami output dataframe with
