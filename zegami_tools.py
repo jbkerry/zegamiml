@@ -49,7 +49,7 @@ def append_group(df, table, name, peak_type, position):
     
     return update_df
 
-def get_plot_data(zegami_file, plot_file):
+def get_plot_data(zegami_file, plot_file, bins=100):
     '''Merges peaks in a zegami output dataframe with plot data from a
     text file with bigWig values in 100 bins across the peak
     
@@ -59,16 +59,18 @@ def get_plot_data(zegami_file, plot_file):
         Path to Zegami info TSV file with the required peak IDs
     plot_file : str
         Path to a tab-delimited file with values for all peaks, split
-        into 100 bins (output from deepTools computeMatrix)
+        into bins (output from deepTools computeMatrix)
+    bins : int, optional
+        Number of bins that the plot has been divided into, default=100
         
     Returns
     -------
-    zegami_df : pandas data-frame
+    zegami_df : pandas dataframe
         Contains data from the original Zegami input file
-    merge_df : pandas data-frame (n x 101)
-        Contains the 100 bins with bigWig plot data from `plot_file` and
+    merge_df : pandas dataframe 
+        Contains the bins with bigWig plot data from `plot_file` and
         the corresponding peak `feature_id`
-    labels : array-like
+    labels : list
         If a Tags column exists in the Zegami table, a list of numerical
         labels will be returned for downstream machine learning
         
@@ -85,13 +87,14 @@ def get_plot_data(zegami_file, plot_file):
     
     
     try:
-        labels = np.where(zegami_df['Tags']=='peak', 1, 0)
+        #labels = np.where(zegami_df['Tags']=='peak', 1, 0)
+        labels = zegami_df['Tags']
     except KeyError:
         labels = ''
     
     merge_df = pd.merge(zegami_df, data_df, on='feature_id')                                  
     feature_id = merge_df['feature_id']
-    merge_df = merge_df.iloc[:, -100:]
+    merge_df = merge_df.iloc[:, -bins:]
     merge_df.insert(0, 'feature_id', feature_id)
     
     if not zegami_df['feature_id'].equals(merge_df['feature_id']):
@@ -166,8 +169,8 @@ def symlink_image(file='../../Img_Detect/tagged_table_for_image_detection.txt'):
             os.symlink(src, dst)
     return "symlinks created"
 
-def filter_trained(tag_file='/t1-data1/WTSA_Dev/jkerry/MachineLearning/Zegami/zegamiml/DHS_plots_tables/tagged_DHS.txt',
-                   full_file='/t1-data1/WTSA_Dev/jkerry/MachineLearning/Zegami/zegamiml/DHS_plots_tables/DHS_PeakFeatures.tab'):
+def filter_trained(tag_file='/t1-data1/WTSA_Dev/jkerry/MachineLearning/Zegami/zegamiml/dev/CTCF_with_doubles.tab',
+                   full_file='/t1-data1/WTSA_Dev/jkerry/MachineLearning/Zegami/zegamiml/CTCF_plots_tables/PeakFeatures.tab'):
     df = pd.read_csv(full_file, sep='\t', header=0)
     df = df.drop_duplicates(subset='feature_id', keep='first')
     

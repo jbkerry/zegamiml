@@ -1,7 +1,16 @@
 #!/usr/bin/env python
 
 from __future__ import print_function
+
 import argparse
+
+import pandas as pd
+import pylab as pl
+from sklearn.decomposition import PCA
+from sklearn.decomposition import RandomizedPCA
+from sklearn.manifold import TSNE
+
+import zegami_tools as zt
 
 parser = argparse.ArgumentParser(description='''This is a script that applies 
 				 unsupervised learning to a directory of images
@@ -18,6 +27,14 @@ parser.add_argument(
     '--bigwig',
     help='Input file file with bigWig plot data (should be a TSV)',
     required=True
+)
+parser.add_argument(
+    '-n',
+    '--bins',
+    help='Number of bins used for the peak',
+    type=int,
+    required=False,
+    default=100
 )
 parser.add_argument(
     '-s',
@@ -50,15 +67,11 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-import pandas as pd
-import pylab as pl
-import zegami_tools as zt
-from sklearn.decomposition import PCA
-from sklearn.decomposition import RandomizedPCA
-from sklearn.manifold import TSNE
 
-zd, merge_df = zt.get_plot_data(zegami_file = args.input,
-				plot_file = args.bigwig)
+
+zd, merge_df, labels = zt.get_plot_data(zegami_file = args.input,
+					plot_file = args.bigwig,
+					bins = args.bins)
 
 if args.sample:
     zd = zd.sample(args.sample, random_state=0)
@@ -85,7 +98,7 @@ zd[y_label]=df['y']
 print('==========================')
 print('Appended x and y coordinates to {} and created {}.'.format(args.input,
 								  args.output))
-zd.to_csv(args.output,sep="\t",index=False)
+zd.to_csv(args.output, sep="\t", index=False)
 print('==========================')
 
 if args.plot:
